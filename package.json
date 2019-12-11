@@ -1,0 +1,11 @@
+{
+  "name": "raspi-modbuf-halfduplex",
+  "version": "0.0.1",
+  "description": "Raspberry Pi native module to do half duplex modbus communication.",
+  "main": "module.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Erland Lewin <erland@lewin.nu>",
+  "license": "ISC"
+}
