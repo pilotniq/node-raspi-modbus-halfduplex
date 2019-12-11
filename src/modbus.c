@@ -51,6 +51,7 @@ typedef enum {
   MBUS_FUNC_READ_DEVICE_ID = 43,
   MBUS_FUNC_EXCEPTION = 0x81,
 } Modbus_ConnectFuncType;
+
 /*
   static variables
 */
@@ -113,10 +114,10 @@ static struct gpiod_line *gpio_line;
  * static function prototypes
  */
 static void modbus_send( const uint8_t *buffer, int dataLength );
-static int modbus_read_reply( char *responseBuffer, int responseBufferLength );
+static int modbus_read_reply( uint8_t *responseBuffer, int responseBufferLength );
 static uint16_t calc_crc( const uint8_t *buffer, int dataLength );
 static bool check_crc( const uint8_t *buffer, int dataLength );
-static uint16_t  mbus_crc16(const uint16_t crc16, const uint8_t byte);
+static uint16_t mbus_crc16(const uint16_t crc16, const uint8_t byte);
 
 static int serial_init( const char *portDeviceName );
 static void gpio_init(int pinNr);
@@ -191,7 +192,6 @@ static void set_blocking (int fd, int should_block)
 // gpio
 static void gpio_init( int dirPin )
 {
-  struct gpiod_line_request_config lineConfig;
   int err;
   
   gpio_chip = gpiod_chip_open_lookup( "gpiochip0" );
@@ -205,7 +205,6 @@ static void gpio_init( int dirPin )
 
   err = gpiod_line_set_value( gpio_line, 0 ); // 0 = listening
   assert( err == 0 );
-  // printf( "Reserving with default 0\n" ); // = listening
 }
 
 static void gpio_start_transmit()
@@ -228,10 +227,6 @@ void modbus_init( int dirPin )
   gpio_init( dirPin );
 
   serial_fd = serial_init( "/dev/serial0" );
-
-  // close( serial_fd );
-
-  // printf( "done!\n" );
 }
 
 ModbusError modbus_write_holding_register( uint8_t device, int holdingRegister, int value )
@@ -423,7 +418,7 @@ static bool check_crc( const uint8_t *buffer, int dataLength )
   return match;
 }
  
-static int modbus_read_reply( char *responseBuffer, int responseBufferLength )
+static int modbus_read_reply( uint8_t *responseBuffer, int responseBufferLength )
 {
   int count, n;
   
