@@ -1,11 +1,27 @@
 {
   "name": "raspi-modbuf-halfduplex",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Raspberry Pi native module to do half duplex modbus communication.",
   "main": "module.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+    "repository": {
+	"type": "git",
+	"url": "git+https://github.com/pilotniq/node-raspi-modbuf-halfduplex.git"
+    },
+    "keywords": [
+	"raspberry",
+	"pi",
+	"modbus",
+	"RS-485",
+	"half duplex",
+	"MAX485"
+    ],
   "author": "Erland Lewin <erland@lewin.nu>",
-  "license": "ISC"
+  "license": "ISC",
+  "bugs": {
+	"url": "https://github.com/pilotniq/node-raspi-modbuf-halfduplex/issues"
+  },
+    "homepage": "https://github.com/pilotniq/node-raspi-modbuf-halfduplex"
 }
