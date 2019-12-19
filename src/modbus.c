@@ -229,13 +229,13 @@ void modbus_init( int dirPin )
   serial_fd = serial_init( "/dev/serial0" );
 }
 
-ModbusError modbus_write_holding_register( uint8_t device, int holdingRegister, int value )
+ModbusError modbus_write_holding_register( uint8_t device, int holdingRegister, uint16_t value )
 {
   uint8_t sendBuffer[8];
   uint8_t responseBuffer[8];
   int responseBufferCount;
   uint8_t responseFunction;
-  
+
   sendBuffer[0] = device;
   sendBuffer[1] = MBUS_FUNC_WRITE_REG;
   sendBuffer[2] = (holdingRegister >> 8) & 0xff;
@@ -409,11 +409,22 @@ static bool check_crc( const uint8_t *buffer, int dataLength )
   bool match;
   
   crc = calc_crc( buffer, dataLength );
-  match = (buffer[ dataLength ] == (crc & 0xff)) && (buffer[dataLength + 1] == (crc >> 8));
+  match = (buffer[ dataLength ] == (crc & 0xff)) &&
+    ((buffer[dataLength + 1] & 0xf8)) == ((crc >> 8) & 0xf8);
 
-  if( !match )
-    printf( "got CRC %02x %02x, expected %02x %02x\n", buffer[ dataLength ], buffer[ dataLength + 1 ],
+  if( match && (buffer[dataLength+1] != ((crc >> 8) & 0xff)))
+    printf( "WARNING: Ignored CRC last three bit mismatch: got %02x expected %02x\n",
+	    buffer[ dataLength + 1 ], (crc >> 8) & 0xff );
+  else if( !match )
+  {
+    printf( "buffer [" );
+    for( int i = 0; i < dataLength + 2; i++ )
+      printf( " %02x", buffer[i] );
+
+    printf( " ]: got CRC %02x %02x, expected %02x %02x\n",
+	    buffer[ dataLength ], buffer[ dataLength + 1 ],
 	    crc & 0xff, crc >> 8 );
+  }
 
   return match;
 }

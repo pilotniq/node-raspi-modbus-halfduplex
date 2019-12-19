@@ -19,7 +19,7 @@ typedef enum
 
 void modbus_init( int dirPin );
 ModbusError modbus_read_analog_register( uint8_t device, int reg, uint16_t *value );
-ModbusError modbus_write_holding_register( uint8_t device, int holdingRegister, int value );
+ModbusError modbus_write_holding_register( uint8_t device, int holdingRegister, uint16_t value );
 ModbusError modbus_write_discrete_coil( uint8_t device, int coil, bool value );
 
 #endif
