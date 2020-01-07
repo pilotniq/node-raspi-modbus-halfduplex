@@ -145,14 +145,12 @@ static int set_interface_attribs (int fd, int speed, int parity)
   tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
   // disable IGNBRK for mismatched speed tests; otherwise receive break
   // as \000 chars
-  tty.c_iflag &= ~IGNBRK;         // disable break processing
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY | ICRNL | INLCR | IGNBRK); // shut off xon/xoff ctrl
   tty.c_lflag = 0;                // no signaling chars, no echo,
   // no canonical processing
   tty.c_oflag = 0;                // no remapping, no delays
   tty.c_cc[VMIN]  = 0;            // read doesn't block
   tty.c_cc[VTIME] = 5;            // 0.5 seconds read timeout
-  
-  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
   
   tty.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
   // enable reading
@@ -214,6 +212,7 @@ static void gpio_start_transmit()
   err = gpiod_line_set_value( gpio_line, 1 ); // 0 = listening
   assert( err == 0 );
 }
+
 static void gpio_stop_transmit()
 {
   int err;
@@ -349,14 +348,6 @@ ModbusError modbus_read_analog_register( uint8_t device, int reg, uint16_t *valu
 
   responseBufferCount = modbus_read_reply( responseBuffer, 7 );
 
-  printf( "Response: [" );
-  
-  for( int i = 0; i < responseBufferCount; i++ )
-  {
-    printf( " %02x", responseBuffer[i] );
-  }
-  printf( " ]\n" );
-  
   // verify CRC of response
   if( responseBufferCount < 5 ) // an exception response is 5 bytes long
     return MODBUS_ERROR_RESPONSE_SHORT;
@@ -409,13 +400,11 @@ static bool check_crc( const uint8_t *buffer, int dataLength )
   bool match;
   
   crc = calc_crc( buffer, dataLength );
-  match = (buffer[ dataLength ] == (crc & 0xff)) &&
-    ((buffer[dataLength + 1] & 0xf8)) == ((crc >> 8) & 0xf8);
 
-  if( match && (buffer[dataLength+1] != ((crc >> 8) & 0xff)))
-    printf( "WARNING: Ignored CRC last three bit mismatch: got %02x expected %02x\n",
-	    buffer[ dataLength + 1 ], (crc >> 8) & 0xff );
-  else if( !match )
+  match = (buffer[ dataLength ] == (crc & 0xff)) &&
+    (buffer[dataLength + 1] == ((crc >> 8) & 0xff));
+
+  if( !match )
   {
     printf( "buffer [" );
     for( int i = 0; i < dataLength + 2; i++ )
@@ -428,7 +417,7 @@ static bool check_crc( const uint8_t *buffer, int dataLength )
 
   return match;
 }
- 
+
 static int modbus_read_reply( uint8_t *responseBuffer, int responseBufferLength )
 {
   int count, n;
@@ -453,15 +442,7 @@ static void modbus_send( const uint8_t *buffer, int dataLength )
   uint8_t crcBuf[2];
   uint16_t crc; //  = 0xffff;
   
-  printf( "modbus_send: buffer=[ " );
-  for( int i = 0; i < dataLength; i++ )
-  {
-    printf( "%02x ", buffer[i] );
-    // crc = mbus_crc16(crc, buffer[i] );
-  }
-  
   crc = calc_crc( buffer, dataLength );
-  printf( "] crc: %x\n", crc );
 
   crcBuf[0] = crc & 0xff;
   crcBuf[1] = (crc >> 8) & 0xff;
@@ -475,26 +456,6 @@ static void modbus_send( const uint8_t *buffer, int dataLength )
 
   gpio_stop_transmit();
 }
-
-
-/*
-USHORT
-usMBCRC16( UCHAR * pucFrame, USHORT usLen )
-{
-    UCHAR           ucCRCHi = 0xFF;
-    UCHAR           ucCRCLo = 0xFF;
-    int             iIndex;
-
-    while( usLen-- )
-    {
-        iIndex = ucCRCLo ^ *( pucFrame++ );
-        ucCRCLo = ( UCHAR )( ucCRCHi ^ aucCRCHi[iIndex] );
-        ucCRCHi = aucCRCLo[iIndex];
-    }
-    return ( USHORT )( ucCRCHi << 8 | ucCRCLo );
-}
-
-*/
 
 static uint16_t   mbus_crc16(const uint16_t crc16, const uint8_t byte){
   const int index = (crc16&0xFF) ^ byte;

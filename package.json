@@ -1,6 +1,6 @@
 {
   "name": "raspi-modbus-halfduplex",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Raspberry Pi native module to do half duplex modbus communication.",
   "main": "module.js",
   "scripts": {
